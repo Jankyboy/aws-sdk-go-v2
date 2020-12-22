@@ -1,99 +1,102 @@
 # AWS SDK for Go v2
 
-![Build Status](https://codebuild.us-west-2.amazonaws.com/badges?uuid=eyJlbmNyeXB0ZWREYXRhIjoib1lGQ3N6RFJsalI5a3BPcXB3Rytaak9kYVh1ZW1lZExPNjgzaU9Udng3VE5OL1I3czIwcVhkMUlUeG91ajBVaWRYcVVJSEVQcmZwTWVyT1p5MGszbnA4PSIsIml2UGFyYW1ldGVyU3BlYyI6IkhrZ1VMN20zRmtYY1BrR0wiLCJtYXRlcmlhbFNldFNlcmlhbCI6MX0%3D&branch=master) [![API Reference](https://img.shields.io/badge/api-reference-blue.svg)](https://docs.aws.amazon.com/sdk-for-go/v2/api) [![Join the chat at https://gitter.im/aws/aws-sdk-go](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/aws/aws-sdk-go-v2?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Apache V2 License](https://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/aws/aws-sdk-go/blob/master/LICENSE.txt)
+[![Build Status](https://travis-ci.org/aws/aws-sdk-go-v2.svg?branch=master)](https://travis-ci.org/aws/aws-sdk-go-v2) [![SDK Documentation](https://img.shields.io/badge/SDK-Documentation-blue)](https://aws.github.io/aws-sdk-go-v2/docs/) [![API Reference](https://img.shields.io/badge/api-reference-blue.svg)](https://pkg.go.dev/mod/github.com/aws/aws-sdk-go-v2) [![Apache V2 License](https://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/aws/aws-sdk-go/blob/master/LICENSE.txt)
 
 
 `aws-sdk-go-v2` is the **Developer Preview** (aka **beta**) for the v2 AWS SDK for the Go programming language. This Developer Preview is provided to receive feedback from the language community on SDK changes prior to the final release. As such users should expect the SDK to release minor version releases that break backwards compatability. The release notes for the breaking change will include information about the breaking change, and how you can migrate to the latest version.
 
-Check out the [Issues] and [Projects] for design and updates being made to the SDK. The v2 SDK requires a minimum version of `Go 1.13`.
+Check out the [Issues] and [Projects] for design and updates being made to the SDK. The v2 SDK requires a minimum version of `Go 1.15`.
 
 We'll be expanding out the [Issues] and [Projects] sections with additional changes to the SDK based on your feedback, and SDK's core's improvements. Check the the SDK's [CHANGELOG] for information about the latest updates to the SDK.
 
 Jump To:
-* [Project Status](_#Project-Status_)
-* [Getting Started](_#Getting-Started_)
-* [Quick Examples](_#Quick-Examples_)
-* [Getting Help](_#Getting-Help_)
-* [Contributing](_#Feedback-and-contributing_)
-* [More Resources](_#Resources_)
+* [Project Status](#project-status)
+* [Getting Started](#getting-started)
+* [Getting Help](#getting-help)
+* [Contributing](#feedback-and-contributing)
+* [More Resources](#resources)
 
 ## Project Status
-The SDK is in preview state as we work to design and implement potentially breaking changes to the SDK as we update the SDK's layout and usage patterns based on your feedback. You can also expect periodic service API model updates as well.
+The service API clients, and core features of the SDK have been significantly rewritten as part of the `v0.25.0` release. API clients are now independently versioned Go modules that are bundled with their respective API types and endpoints. Client API serialization and deserialization are now fully code-generated from the service model, providing performance improvements over previous releases.
 
-We are actively seeking community feedback for several changes to the SDK. Please review our [design] page on issues
+A number of API clients may be immediately available or usable without workarounds. Additional support for these clients will be added over the next series of releases as support is extended to support their feature set.
+
+We are actively seeking community feedback for API clients, and other upcoming design changes to the SDK. Please review our [design] page on issues
 that are currently pending community feedback.
 
 Users should expect significant changes that could affect the following (non-exhaustive) areas:
-* Package Locations
-  * Includes Location of Service API Types
-* Modularization
+* Package Locations & Modularization
 * Credential Providers
 * Paginators
 * Waiters
-* Service Endpoint Resolution
-* Minimum Supported Go Release following the [Language Release Policy](https://golang.org/doc/devel/release.html#policy)
+* Minimum Supported Go version following the [AWS SDKs and Tools Maintenance Policy](https://docs.aws.amazon.com/credref/latest/refdocs/maint-policy.html)
 
 ## Getting started
-
-The best way to get started working with the SDK is to use `go get` to add the SDK to your Go Workspace or application using Go modules.
-
-```sh
-go get github.com/aws/aws-sdk-go-v2
-```
-
-Without Go Modules, or in a GOPATH use the `/...` suffix on the `go get` to retrieve all of the SDK's dependencies.
-
-```sh
-go get github.com/aws/aws-sdk-go-v2/...
-```
-
-## Quick Examples
-
-### Hello AWS
-
+To get started working with the SDK setup your project for Go modules, and retrieve the SDK dependencies with `go get`.
 This example shows how you can use the v2 SDK to make an API request using the SDK's [Amazon DynamoDB] client.
+
+###### Initialize Project
+```sh
+$ mkdir ~/helloaws
+$ cd ~/helloaws
+$ go mod init helloaws
+```
+###### Add SDK Dependencies
+```sh
+$ go get github.com/aws/aws-sdk-go-v2/aws
+$ go get github.com/aws/aws-sdk-go-v2/config
+$ go get github.com/aws/aws-sdk-go-v2/service/dynamodb
+```
+
+###### Write Code
+In your preferred editor add the following content to `main.go`
 
 ```go
 package main
 
 import (
-	"context"
-	"fmt"
+    "context"
+    "fmt"
+    "log"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/aws/endpoints"
-	"github.com/aws/aws-sdk-go-v2/aws/external"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+    "github.com/aws/aws-sdk-go-v2/aws"
+    "github.com/aws/aws-sdk-go-v2/config"
+    "github.com/aws/aws-sdk-go-v2/service/dynamodb"
 )
 
 func main() {
-	// Using the SDK's default configuration, loading additional config
-	// and credentials values from the environment variables, shared
-	// credentials, and shared configuration files
-	cfg, err := external.LoadDefaultAWSConfig()
-	if err != nil {
-		panic("unable to load SDK config, " + err.Error())
-	}
+    // Using the SDK's default configuration, loading additional config
+    // and credentials values from the environment variables, shared
+    // credentials, and shared configuration files
+    cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion("us-west-2"))
+    if err != nil {
+        log.Fatalf("unable to load SDK config, %v", err)
+    }
 
-	// Set the AWS Region that the service clients should use
-	cfg.Region = "us-west-2"
+    // Using the Config value, create the DynamoDB client
+    svc := dynamodb.NewFromConfig(cfg)
 
-	// Using the Config value, create the DynamoDB client
-	svc := dynamodb.New(cfg)
+    // Build the request with its input parameters
+    resp, err := svc.ListTables(context.Background(), &dynamodb.ListTablesInput{
+        Limit: aws.Int32(5),
+    })
+    if err != nil {
+        log.Fatalf("failed to list tables, %v", err)
+    }
 
-	// Build the request with its input parameters
-	req := svc.DescribeTableRequest(&dynamodb.DescribeTableInput{
-		TableName: aws.String("myTable"),
-	})
-
-	// Send the request, and get the response or error back
-	resp, err := req.Send(context.Background())
-	if err != nil {
-		panic("failed to describe table, "+err.Error())
-	}
-
-	fmt.Println("Response", resp)
+    fmt.Println("Tables:")
+    for _, tableName := range resp.TableNames {
+        fmt.Println(aws.ToString(tableName))
+    }
 }
+```
+
+###### Compile and Execute
+```sh
+$ go run .
+Table:
+tableOne
+tableTwo
 ```
 
 ## Getting Help
@@ -118,7 +121,7 @@ also include reproduction case when appropriate.
 
 The GitHub issues are intended for bug reports and feature requests. For help
 and questions with using AWS SDK for Go please make use of the resources listed
-in the [Getting Help](https://github.com/aws/aws-sdk-go-v2#getting-help) section.
+in the [Getting Help](#getting-help) section.
 Keeping the list of open issues lean will help us respond in a timely manner.
 
 ## Feedback and contributing
@@ -133,7 +136,7 @@ The v2 SDK will use GitHub [Issues] to track feature requests and issues with th
 
 ## Resources
 
-[SDK API Reference Documentation](https://docs.aws.amazon.com/sdk-for-go/v2/api/) - Use this
+[SDK API Reference Documentation](https://pkg.go.dev/mod/github.com/aws/aws-sdk-go-v2) - Use this
 document to look up all API operation input and output parameters for AWS
 services supported by the SDK. The API reference also includes documentation of
 the SDK, and examples how to using the SDK, service client API operations, and
@@ -144,10 +147,6 @@ documentation to learn how to interface with AWS services. These guides are
 great for getting started with a service, or when looking for more 
 information about a service. While this document is not required for coding, 
 services may supply helpful samples to look out for.
-
-[SDK Examples](https://github.com/aws/aws-sdk-go-v2/tree/master/example) -
-Included in the SDK's repo are several hand crafted examples using the SDK
-features and AWS services.
 
 [Forum](https://forums.aws.amazon.com/forum.jspa?forumID=293) - Ask questions, get help, and give feedback
 
